@@ -4,21 +4,27 @@
 
 ```text
 npm install
+npm install --save-dev playwright
+npm run dev -- --port 4173
+npm test
 npm run typecheck
 npm run lint
-npm test
 npm run build
-npm run dev -- --port 4173
+node /tmp/lumen-envelope-qa.mjs
+node /tmp/lumen-e2e.mjs
+node /tmp/lumen-resource-check.mjs
 ```
 
 ## Results
 
-- `npm install`: passed; 0 vulnerabilities reported.
+- Dependency install passed with no reported vulnerabilities.
+- `npm test`: passed — 5 files / 7 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
-- `npm test`: passed — 3 files / 5 tests (including existing ignored-worktree test discovery).
-- `npm run build`: passed. Vite reports one non-failing chunk-size advisory because Three.js is bundled with the initial local experience.
-- Local server: started and answered HTTP 200 on `http://localhost:4173`.
+- `npm run build`: passed. Vite emitted only its non-blocking initial Three.js chunk-size advisory.
+- Local server answered HTTP 200 at `http://localhost:4173`.
+- The repeatable Playwright recipient journey completed with local portrait, landscape, and square image fixtures. It validated composer restoration after returning from the heart flow, focused-photo Escape return, constellation Escape return, and a 390 × 844 mobile composer screenshot.
+- The repeatable browser journey completed with no page errors, failed HTTP resources, or meaningful console errors. A local SVG favicon was added after tracing the prior `/favicon.ico` 404.
 
 ## Automated coverage
 
@@ -26,37 +32,45 @@ npm run dev -- --port 4173
 - Reducer steps safely from focused photo to constellation to heart.
 - Text normalization removes controls and collapses whitespace.
 - File validation rejects unsupported files and image counts above 48.
+- Heart gateway activation dispatches its completion event.
+- A photo card does not trigger the scene background return while it is focused.
 
-## Live browser visual review
+## Browser visual review
 
-Desktop browser checkpoints inspected at the browser’s desktop viewport:
+Reviewed screenshots were captured locally under `/tmp/lumen-qa` at these viewports:
 
-- Composer with zero images: reviewed.
-- Cinematic sender/recipient intro: reviewed.
-- Closed envelope: reviewed. Initially found paper leaked through the front fold; fixed by adding explicit sealed/seal-breaking clipping states.
-- Envelope activation and reader: reviewed. Initially found the reader sheet inherited the extraction transform and appeared off-canvas; fixed with a final reader transform override.
-- Fully extracted reader: reviewed after repair; sheet is centered, readable, and retains the original continuous letter object.
+- Desktop: 1440 × 900 — empty composer, populated composer, final reader, heart stage, constellation and focused photo.
+- Desktop: 1280 × 800 — closed envelope, seal break, flap opening, letter extraction, and settled reader.
+- Mobile portrait: 390 × 844 — populated composer, visible thumbnail management controls, readable form controls, and full-width preview action.
 
-## Interaction and resilience checks performed
+The envelope sequence was inspected frame-by-frame. The sealed state conceals the letter; the seal fades/breaks before the flap moves; the flap opens before the same clipped paper rises from the pocket; the reader action appears only after the paper completes its final centered expansion.
 
-- Composer validation with no sender/recipient/letter was manually exercised during development.
-- Zero-photo preview completed through reader successfully.
-- Repeated open input is reducer-locked while phase is non-stable.
-- Return-to-composer remains available from intro/envelope/reader.
+## Interaction and resilience checks
+
+- Local thumbnail upload of portrait, landscape, and square fixtures: passed.
+- Photo selection count and composer return preservation: passed.
+- Rapid repeated envelope activation is reducer-locked during active phases.
+- Photo-card pointer release, background return, focus, and both Escape return steps: passed.
+- Return to composer followed by a new preview: passed.
+- Resize-responsive desktop and mobile layout review: passed.
 - `prefers-reduced-motion` has a CSS reduction path.
-- The Three scene has ResizeObserver, visibility pause, requestAnimationFrame cleanup, texture-free geometry/material disposal, drag threshold, bounded wheel zoom, and Escape reducer handling implemented.
+- The Three scene uses a ResizeObserver, visibility pause, requestAnimationFrame cleanup, bounded wheel zoom, drag threshold, and resource disposal.
 
-## Remaining verification limitations
+## Defects found and fixed in this repair pass
 
-The available browser interaction adapter could not attach local filesystem files, so live thumbnail/reorder and photo-card focus visual checkpoints were not executed with selected fixtures. The implementation includes those paths and local raster fixtures were generated under `/tmp/lumen-qa`, but full file-input and multi-viewport automation should be completed with Playwright in a follow-up. Tablet/mobile orientation, WebGL context-loss recovery, and reduced-motion browser emulation were not directly run in this session.
+1. The visible **Enter the heart** control had no click handler. Added `HeartReveal` with a tested completion event.
+2. The Three.js scene recreated its renderer and particle resources on each phase update. It now retains one particle system and reads phase through a ref.
+3. The fallback notice intercepted photo-card taps. It is now non-interactive.
+4. Gallery offsets were percentages of each card, causing cards to overlap. They are now scene-relative viewport offsets.
+5. Parent pointer capture retargeted photo releases as background gestures. Cards are excluded from capture and stop their own pointer release.
+6. The reader action appeared during final paper expansion, and the sampled reader could sit off-center. It now waits for the physical sheet transform to settle, then displays the action.
+7. The application appended an automatic sign-off after the authored letter. The reader now preserves only the sender's supplied content.
+8. The envelope flap now waits for seal completion instead of opening during the seal-breaking phase.
 
-## Defects found and fixed
+## Remaining environment limitation
 
-1. Closed envelope allowed paper content to show beneath the fold. Fixed with explicit phase classes and concealed clipping before flap opening.
-2. Completion handlers used animation events for CSS transitions, which stalled phase progression. Fixed to use `transitionend` tied to the transformed element.
-3. Reader sheet was positioned off-canvas after extraction because a later extraction selector overrode the reader transform. Fixed with final reader-state transform specificity.
-4. Updating photos would revoke already selected object URLs due to effect cleanup on every list change. Fixed by keeping current URLs in a ref and revoking only on application teardown.
+The container's Chromium process cannot create a WebGL context, even with attempted SwiftShader/ANGLE flags. This allowed full fallback and DOM interaction testing, but not a rendered-GPU screenshot of the particle cloud in this environment. The application presents a clear non-blocking fallback and its renderer code path was typechecked, lifecycle-reviewed, and exercised up to context creation. A browser with WebGL enabled is still required to visually inspect the GPU-rendered particle heart itself.
 
-## Known product limitations
+## Known product limitation
 
-This version is intentionally session-local. There is no persistence or sharing. The production bundle has a non-blocking Three.js chunk-size warning; splitting the memory scene into a lazy route is the appropriate future optimization.
+This version is intentionally session-local: no persistence, sharing, upload, or remote storage. The production build includes a non-blocking Three.js initial-chunk advisory; future optimization can lazy-load the memory scene.
