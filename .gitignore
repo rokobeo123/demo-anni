@@ -1,0 +1,8 @@
+.superpowers/
+.worktrees/
+node_modules/
+dist/
+data/*
+!data/.gitkeep
+.env
+test-results/
